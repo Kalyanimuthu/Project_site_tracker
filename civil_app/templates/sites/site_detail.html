@@ -4,7 +4,21 @@
 
 <div class="container">
 
+    <div class="d-flex justify-content-between align-items-center mb-3">
     <h2 class="mb-0">{{ site.site_name }}</h2>
+
+    <select class="form-select w-auto" onchange="location.href=this.value;">
+        <option selected disabled>Switch Site</option>
+
+        {% for s in all_sites %}
+            <option value="{% url 'site_detail' s.id %}"
+                {% if s.id == site.id %}selected{% endif %}>
+                {{ s.site_name }}
+            </option>
+        {% endfor %}
+    </select>
+</div>
+
     <p class="text-muted">{{ site.location }}</p>
 
     <!-- ---------------- DATE FILTER ---------------- -->
@@ -24,7 +38,7 @@
         </div>
     </form>
 
-    <!-- Modal -->
+    <!-- DATE RANGE MODAL -->
     <div class="modal fade" id="entryModal" tabindex="-1">
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -47,45 +61,83 @@
 
     <form method="POST" action="{% url 'update_sections' site.id %}">
         {% csrf_token %}
-        <table class="table table-bordered bg-white mt-3">
+
+        <table class="table table-bordered bg-white mt-3 shadow-sm">
             <thead class="table-light">
                 <tr>
                     <th>Section</th>
                     <th>Labour Count</th>
-                    <th>Material Count</th>
-                    <th>Payment</th>
+                    <th>Labour Rate</th>
+                    <th>Material Payment</th>
+                    <th>Total Payment</th>
                 </tr>
             </thead>
 
             <tbody>
+
                 {% for sec in sections %}
                 <tr>
                     <td>
-    <a href="#" onclick="filterBySection('{{ sec.section_name }}')" 
-       class="text-primary fw-bold text-decoration-none">
-        {{ sec.section_name|title }}
-    </a>
-</td>
-
+                        <a href="#" onclick="filterBySection('{{ sec.section_name }}')" 
+                           class="text-primary fw-bold text-decoration-none">
+                            {{ sec.section_name|title }}
+                        </a>
+                    </td>
 
                     {% if sec.section_name == "civil" %}
-                        <td>-</td>
-                        <td>-</td>
-                        <td class="fw-bold text-primary">₹ {{ civil_team_total }}</td>
-                    {% else %}
-                        <td><input type="number" name="labour_{{ sec.id }}" value="{{ sec.labour_count }}" class="form-control"></td>
-                        <td><input type="number" name="material_{{ sec.id }}" value="{{ sec.material_count }}" class="form-control"></td>
-                        <td><input type="number" step="0.01" name="payment_{{ sec.id }}" value="{{ sec.payment }}" class="form-control"></td>
+                        
+    <td class="fw-bold">
+        Mason: {{ total_mason_count }}<br>
+        Helper: {{ total_helper_count }}
+    </td>
+
+    
+
+    <td class="fw-bold">
+        Mason Pay: ₹ {{ total_mason_payment }}<br>
+        Helper Pay: ₹ {{ total_helper_payment }}<br>
+        
+    </td>
+    <td>-</td>
+    <td class="fw-bold text-primary">
+    ₹ {{ civil_total_payment }}
+</td>
+{% else %}
+
+
+                    
+                        <td>
+                            <input type="number" class="form-control"
+                                name="labour_{{ sec.id }}"
+                                value="{{ sec.labour_count }}">
+                        </td>
+
+                        <td>
+                            <input type="number" class="form-control"
+                                name="labour_rate_{{ sec.id }}"
+                                value="{{ sec.labour_rate }}">
+                        </td>
+
+                        <td>
+                            <input type="number" class="form-control"
+                                name="material_payment_{{ sec.id }}"
+                                value="{{ sec.material_payment }}">
+                        </td>
+
+                        <td class="fw-bold">₹ {{ sec.payment }}</td>
                     {% endif %}
                 </tr>
                 {% endfor %}
-                
+
+                <!-- TOTAL ROW -->
                 <tr class="table-success fw-bold">
                     <td>Total</td>
                     <td>{{ section_labour_total }}</td>
-                    <td>{{ section_material_total }}</td>
+                    <td>-</td>
+                    <td>-</td>
                     <td>₹ {{ section_payment_total }}</td>
                 </tr>
+
             </tbody>
         </table>
 
@@ -94,36 +146,65 @@
 
     <hr>
 
-    <!-- ---------------- CIVIL TEAMS ---------------- -->
+    <!-- ---------------- CIVIL TEAM TABLE ---------------- -->
     <h4 class="mt-4">👷 Civil Teams Payment Summary</h4>
 
     <form method="POST" action="{% url 'update_civil_team' site.id %}">
         {% csrf_token %}
 
-        <table class="table table-bordered bg-white mt-3">
+        <table class="table table-bordered bg-white mt-3 shadow-sm">
             <thead class="table-light">
                 <tr>
                     <th>Team Name</th>
-                    <th>Mason Payment</th>
-                    <th>Helper Payment</th>
+                    <th>Mason Count</th>
+                    <th>Mason Rate</th>
+                    <th>Helper Count</th>
+                    <th>Helper Rate</th>
                     <th>Total</th>
                 </tr>
             </thead>
 
             <tbody>
+
                 {% for team in civil_teams %}
                 <tr>
                     <td>{{ team.team_name }}</td>
-                    <td><input type="number" step="0.01" name="mason_payment_{{ team.id }}" value="{{ team.mason_payment }}" class="form-control"></td>
-                    <td><input type="number" step="0.01" name="helper_payment_{{ team.id }}" value="{{ team.helper_payment }}" class="form-control"></td>
-                    <td class="fw-bold">₹ {{ team.total_payment }}</td>
+
+                    <td>
+                        <input type="number" class="form-control"
+                               name="mason_count_{{ team.id }}"
+                               value="{{ team.mason_count }}">
+                    </td>
+
+                    <td>
+                        <input type="number" class="form-control"
+                               name="mason_rate_{{ team.id }}"
+                               value="{{ team.mason_rate }}">
+                    </td>
+
+                    <td>
+                        <input type="number" class="form-control"
+                               name="helper_count_{{ team.id }}"
+                               value="{{ team.helper_count }}">
+                    </td>
+
+                    <td>
+                        <input type="number" class="form-control"
+                               name="helper_rate_{{ team.id }}"
+                               value="{{ team.helper_rate }}">
+                    </td>
+
+                    <td class="fw-bold">
+                        ₹ {{ team.total_payment }}
+                    </td>
                 </tr>
                 {% endfor %}
 
                 <tr class="table-success fw-bold">
-                    <td colspan="3" class="text-end">TOTAL</td>
+                    <td colspan="5" class="text-end">TOTAL</td>
                     <td>₹ {{ civil_team_total }}</td>
                 </tr>
+
             </tbody>
         </table>
 
@@ -133,6 +214,8 @@
 </div>
 
 <input type="hidden" id="siteId" value="{{ site.id }}">
+
+<!-- Section Filter Modal -->
 <div class="modal fade" id="sectionModal" tabindex="-1">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
@@ -148,8 +231,6 @@
   </div>
 </div>
 
-<!-- Correct static script load -->
 <script src="{% static 'js/script.js' %}"></script>
 
 {% endblock %}
-

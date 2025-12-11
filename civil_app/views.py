@@ -55,23 +55,39 @@ def site_detail(request, site_id):
     civil_team_total = sum(team.total_payment for team in teams)
 
     for sec in sections:
-        if sec.section_name == "civil":
+        if sec.section_name.lower() == "civil":
             sec.payment = civil_team_total
 
-    section_total = sum(s.payment for s in sections)
-    labour_total = sum(s.labour_count for s in sections)
-    material_total = sum(s.material_count for s in sections)
+    section_payment_total = sum(s.payment for s in sections)
+    section_labour_total = sum(s.labour_count for s in sections)
+    section_material_total = sum(s.material_count for s in sections)
+
+    total_mason_count = sum(t.mason_count for t in teams)
+    total_helper_count = sum(t.helper_count for t in teams)
+    total_mason_payment = sum(t.mason_payment for t in teams)
+    total_helper_payment = sum(t.helper_payment for t in teams)
+    civil_total_payment = total_mason_payment + total_helper_payment
+
+    # 🔥 IMPORTANT — needed for dropdown!
+    all_sites = Site.objects.all().order_by("site_name")
 
     return render(request, "sites/site_detail.html", {
         "site": site,
         "sections": sections,
         "civil_teams": teams,
         "civil_team_total": civil_team_total,
-        "section_labour_total": labour_total,
-        "section_material_total": material_total,
-        "section_payment_total": section_total,
-    })
+        "section_payment_total": section_payment_total,
+        "section_labour_total": section_labour_total,
+        "section_material_total": section_material_total,
+        "total_mason_count": total_mason_count,
+        "total_helper_count": total_helper_count,
+        "total_mason_payment": total_mason_payment,
+        "total_helper_payment": total_helper_payment,
+        "civil_total_payment": civil_total_payment,
 
+        # 🔥 required for dropdown
+        "all_sites": all_sites
+    })
 
 # --------------------------------------
 # UPDATE SECTIONS + SAVE DAILY ENTRY
@@ -82,23 +98,37 @@ def update_sections(request, site_id):
     today = timezone.now().date()
 
     for sec in site.sections.all():
-        if sec.section_name == "civil":
+
+        # skip civil section (handled separately)
+        if sec.section_name.lower() == "civil":
             continue
 
-        sec.labour_count = int(request.POST.get(f"labour_{sec.id}", 0))
-        sec.material_count = int(request.POST.get(f"material_{sec.id}", 0))
-        sec.payment = to_decimal(request.POST.get(f"payment_{sec.id}", 0))
+        # Get values from form
+        labour_count = int(request.POST.get(f"labour_{sec.id}", 0))
+        material_pay = float(request.POST.get(f"material_payment_{sec.id}", 0))
+        labour_rate = float(request.POST.get(f"labour_rate_{sec.id}", sec.labour_rate))
+
+        # Save raw values
+        sec.labour_count = labour_count
+        sec.material_payment = material_pay
+        sec.labour_rate = labour_rate
+
+        # NEW auto-calculated values
+        sec.labour_pay = labour_count * labour_rate
+        sec.material_pay = material_pay
+
+        sec.payment = sec.labour_pay + sec.material_pay
         sec.save()
 
+        # Save entry log
         DailyEntry.objects.create(
-    site=site,
-    entry_date=timezone.now().date(),
-    section_name=sec.section_name,
-    labour_count=sec.labour_count,
-    material_count=sec.material_count,
-    payment=sec.payment
-)
-
+            site=site,
+            entry_date=today,
+            section_name=sec.section_name,
+            labour_count=labour_count,
+            material_count=0,
+            payment=sec.payment
+        )
 
     return redirect("site_detail", site.id)
 
@@ -112,19 +142,36 @@ def update_civil_team(request, site_id):
     today = timezone.now().date()
 
     for team in site.civil_teams.all():
-        team.mason_payment = to_decimal(request.POST.get(f"mason_payment_{team.id}", 0))
-        team.helper_payment = to_decimal(request.POST.get(f"helper_payment_{team.id}", 0))
+
+        # Counts
+        mason_count = int(request.POST.get(f"mason_count_{team.id}", team.mason_count))
+        helper_count = int(request.POST.get(f"helper_count_{team.id}", team.helper_count))
+
+        # Rates
+        mason_rate = float(request.POST.get(f"mason_rate_{team.id}", team.mason_rate))
+        helper_rate = float(request.POST.get(f"helper_rate_{team.id}", team.helper_rate))
+
+        # Save raw values
+        team.mason_count = mason_count
+        team.helper_count = helper_count
+        team.mason_rate = mason_rate
+        team.helper_rate = helper_rate
+
+        # Auto-calc payments
+        team.mason_payment = mason_count * mason_rate
+        team.helper_payment = helper_count * helper_rate
+
         team.save()
 
+        # Save log
         DailyEntry.objects.create(
-    site=site,
-    entry_date=timezone.now().date(),
-    team_name=team.team_name,
-    mason_payment=team.mason_payment,
-    helper_payment=team.helper_payment,
-    total_payment=team.total_payment
-)
-
+            site=site,
+            entry_date=today,
+            team_name=team.team_name,
+            mason_payment=team.mason_payment,
+            helper_payment=team.helper_payment,
+            total_payment=team.total_payment
+        )
 
     return redirect("site_detail", site.id)
 

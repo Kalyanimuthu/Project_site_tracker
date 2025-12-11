@@ -12,9 +12,20 @@ class Site(models.Model):
 class SiteSection(models.Model):
     site = models.ForeignKey(Site, related_name="sections", on_delete=models.CASCADE)
     section_name = models.CharField(max_length=100)
+
     labour_count = models.IntegerField(default=0)
     material_count = models.IntegerField(default=0)
-    payment = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+    # Payment fields
+    labour_rate = models.DecimalField(max_digits=10, decimal_places=2, default=1000)
+    material_payment = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+    # NEW FIELDS (You must add these)
+    labour_pay = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    material_pay = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
+    # Total section payment
+    payment = models.DecimalField(max_digits=12, decimal_places=2, default=0)
 
     def __str__(self):
         return f"{self.section_name} - {self.site.site_name}"
@@ -23,8 +34,15 @@ class SiteSection(models.Model):
 class CivilTeam(models.Model):
     site = models.ForeignKey(Site, related_name="civil_teams", on_delete=models.CASCADE)
     team_name = models.CharField(max_length=100)
+
     mason_payment = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     helper_payment = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+    mason_rate = models.DecimalField(max_digits=10, decimal_places=2, default=800)
+    helper_rate = models.DecimalField(max_digits=10, decimal_places=2, default=500)
+
+    mason_count = models.IntegerField(default=0)
+    helper_count = models.IntegerField(default=0)
 
     @property
     def total_payment(self):
@@ -41,20 +59,17 @@ class CivilSectionDetail(models.Model):
         return f"Civil Detail - {self.site.site_name}"
 
 
-# -------------------------
-# NEW MODEL: Daily Entry
-# -------------------------
 class DailyEntry(models.Model):
     site = models.ForeignKey(Site, on_delete=models.CASCADE)
     entry_date = models.DateField()
 
-    # For normal sections
+    # Section-wise entry
     section_name = models.CharField(max_length=100, blank=True, null=True)
     labour_count = models.IntegerField(default=0)
     material_count = models.IntegerField(default=0)
     payment = models.FloatField(default=0)
 
-    # For civil teams
+    # Civil entries
     team_name = models.CharField(max_length=100, blank=True, null=True)
     mason_payment = models.FloatField(default=0)
     helper_payment = models.FloatField(default=0)
