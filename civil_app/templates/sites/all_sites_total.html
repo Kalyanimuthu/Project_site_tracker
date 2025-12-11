@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{%load static%}
+{% block content %}
+<div class="container mt-4">
+
+    <h2 class="mb-4">🏗 All Sites Payment Summary</h2>
+<form method="get" class="row mb-4">
+
+    <div class="col-md-3">
+        <label>From Date</label>
+        <input type="date" name="from_date" value="{{ from_date }}" class="form-control">
+    </div>
+
+    <div class="col-md-3">
+        <label>To Date</label>
+        <input type="date" name="to_date" value="{{ to_date }}" class="form-control">
+    </div>
+
+    <div class="col-md-3 align-self-end">
+        <button class="btn btn-primary w-100">Filter</button>
+    </div>
+
+</form>
+    <table class="table table-bordered bg-white shadow-sm">
+        <thead class="table-dark">
+            <tr>
+                <th>Site Name</th>
+                <th>Section Total</th>
+                <th>Civil Team Total</th>
+                <th>Total Payment</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for item in site_data %}
+            <tr>
+                <td>
+                    <a href="{% url 'site_detail' item.site.id %}" 
+                       class="text-decoration-none fw-bold text-primary">
+                        {{ item.site.site_name }}
+                    </a>
+                </td>
+
+                <td>₹ {{ item.section_total }}</td>
+                <td>₹ {{ item.civil_total }}</td>
+                <td class="fw-bold text-success">₹ {{ item.site_total }}</td>
+            </tr>
+            {% endfor %}
+
+            <tr class="table-success fw-bold">
+                <td colspan="3" class="text-end">GRAND TOTAL</td>
+                <td>₹ {{ grand_total }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+
+</div>
+{% endblock %}

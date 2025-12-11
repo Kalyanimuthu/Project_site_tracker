@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container mt-4">
+
+    <h2 class="mb-4">🔎 Filter Site Payments by Section</h2>
+
+    <!-- FILTER FORM -->
+    <form method="get" class="row mb-4">
+
+        <!-- SECTION DROPDOWN -->
+        <div class="col-md-3">
+            <label>Select Section</label>
+            <select name="section" class="form-select" required>
+    <option value="">-- Choose Section --</option>
+
+    {% for sec in sections %}
+        <option value="{{ sec }}" {% if section_name == sec %}selected{% endif %}>
+            {{ sec|title }}
+        </option>
+    {% endfor %}
+
+    <option value="civil" {% if section_name == "civil" %}selected{% endif %}>
+        Civil
+    </option>
+</select>
+
+        </div>
+
+        <!-- DATE FILTER -->
+        <div class="col-md-3">
+            <label>From Date</label>
+            <input type="date" name="from_date" value="{{ from_date }}" class="form-control">
+        </div>
+
+        <div class="col-md-3">
+            <label>To Date</label>
+            <input type="date" name="to_date" value="{{ to_date }}" class="form-control">
+        </div>
+
+        <div class="col-md-3 align-self-end">
+            <button class="btn btn-dark w-100">Filter</button>
+        </div>
+
+    </form>
+
+    <hr>
+
+    {% if not section_name %}
+        <p class="text-muted">Please select a section to view payment details.</p>
+    {% endif %}
+
+    {% if section_name and result|length == 0 %}
+        <div class="alert alert-warning">
+            No payments found for <b>{{ section_name|title }}</b> in this date range.
+        </div>
+    {% endif %}
+
+    <!-- RESULTS -->
+    <div class="row">
+        {% for item in result %}
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-3 border-0" style="border-left: 5px solid #0d6efd;">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <a href="{% url 'site_detail' item.site.id %}" class="text-decoration-none">
+                            🏗 {{ item.site.site_name }}
+                        </a>
+                    </h5>
+
+                    <p class="card-text mb-1">
+                        <b>Section:</b> {{ item.section|title }}
+                    </p>
+
+                    <p class="card-text fs-5 fw-bold text-primary">
+                        ₹ {{ item.payment }}
+                    </p>
+
+                    <a href="{% url 'site_detail' item.site.id %}" class="btn btn-outline-primary btn-sm">
+                        View Site →
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+
+{% endblock %}

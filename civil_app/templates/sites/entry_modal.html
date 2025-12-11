@@ -1,0 +1,26 @@
+<h5>Entries from {{ from_date }} to {{ to_date }}</h5>
+
+{% if entries %}
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Section</th>
+            <th>Details</th>
+            <th>Amount</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for e in entries %}
+        <tr>
+            <td>{{ e.date }}</td>
+            <td>{{ e.section }}</td>
+            <td>{{ e.note }}</td>
+            <td>₹ {{ e.amount }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="text-muted">No entries found for this date range.</p>
+{% endif %}

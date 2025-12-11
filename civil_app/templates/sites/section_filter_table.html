@@ -1,0 +1,25 @@
+<table class="table table-bordered">
+    <thead class="table-light">
+        <tr>
+            <th>Site Name</th>
+            <th>Labour</th>
+            <th>Material</th>
+            <th>Payment</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for r in results %}
+        <tr>
+            <td>{{ r.site }}</td>
+            <td>{{ r.labour }}</td>
+            <td>{{ r.material }}</td>
+            <td>₹ {{ r.payment }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% if results|length == 0 %}
+<p class="text-muted">No entries found for this section.</p>
+{% endif %}
